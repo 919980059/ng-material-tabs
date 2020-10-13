@@ -1,0 +1,104 @@
+::ng-deep {
+
+  lib-ng-material-tabs {
+    position: absolute;
+    z-index: 999;
+  }
+
+  // 背景板样式
+  .backdrop-transparent {
+    background: #ffffff00;
+  }
+}
+
+// 普通状态的样式
+.route-tab {
+  opacity: 0.7;
+  font-size: 13px;
+  min-width: 120px !important;
+  padding: 0 !important;
+  text-decoration: none !important;
+  transition: opacity 0.3s ease-in-out 0ms;
+  transform-style: preserve-3d;
+
+  & > div:first-child {
+    height: 100%;
+    width: calc(100% - 28px);
+    padding: 0 16px 0 24px;
+
+    span {
+      transition: transform 0.2s ease-in-out 0s;
+      transform-style: preserve-3d;
+    }
+  }
+
+  & > div:nth-child(2) {
+    height: 100%;
+
+    & > div {
+      width: 100%;
+      height: calc(50% - 10px);
+    }
+  }
+
+
+  mat-icon {
+    visibility: hidden;
+    transition: transform 0.1s ease-in-out 0s;
+
+    &:hover {
+      background: #CCCCCC80;
+      border-radius: 50%;
+      transform: scale3d(1.2, 1.2, 1.2);
+    }
+  }
+
+  &:hover {
+    background: #CCCCCC30;
+
+    span {
+      color: #039be5;
+      transform: scale3d(1.2, 1.2, 1.2);
+    }
+
+    mat-icon {
+      visibility: visible;
+    }
+  }
+}
+
+// 激活标签样式
+.tab-active {
+  opacity: 1;
+
+  span {
+    transform: scale3d(1.2, 1.2, 1.2);
+  }
+}
+
+// 右键菜单
+.menu-list {
+  width: 120px;
+  border: solid 1px #ccc;
+  border-radius: 5px;
+  background: #fff;
+  padding: 0;
+  text-align: center;
+  margin: 0;
+}
+
+.menu-list > li {
+  width: 100%;
+  font-size: 12px;
+  list-style-type: none;
+  border-bottom: solid 1px #8b8b8b50;
+  padding: 12px 20px;
+}
+
+.menu-list > li:last-child {
+  border-bottom: none;
+}
+
+.user-select-none{
+  user-select: none;
+}

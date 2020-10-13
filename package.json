@@ -1,0 +1,29 @@
+{
+  "name": "ng-material-tabs",
+  "version": "0.1.0",
+  "author": "widzz",
+  "scripts": {
+    "login": "npm login --registry=https://repo.ttooc.xyz/repository/npm-private/",
+    "unpublish-npm": "npm unpublish",
+    "publish-npm": "npm publish",
+    "publish-nexus": "npm publish --registry=https://repo.ttooc.xyz/repository/npm-private/"
+  },
+  "keywords": [
+    "Angular",
+    "Tabs",
+    "RouteTabs",
+    "RouterReuse",
+    "Material"
+  ],
+  "peerDependencies": {
+    "@angular/common": ">=8.0.0",
+    "@angular/core": "^>=8.0.0",
+    "@angular/cdk": ">=8.0.0",
+    "@angular/material": ">=8.0.0",
+    "@ngx-translate/core": ">=11.0.0",
+    "rxjs": ">=6.0.0"
+  },
+  "dependencies": {
+    "tslib": "^2.0.0"
+  }
+}
