@@ -6,7 +6,7 @@
 
 #### [demo on gitee](http://widzz.gitee.io/widzz-angular-demo/#/login)
 
-#### [code in github](https://github.com/919980059/ng-material-tabs.git)
+#### [code on github](https://github.com/919980059/ng-material-tabs.git)
 
 #### us/pw: widzz/widzz12345
 
