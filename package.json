@@ -1,12 +1,12 @@
 {
   "name": "ng-material-tabs",
-  "version": "0.1.0",
+  "version": "0.1.1",
+  "license": "MIT",
   "author": "widzz",
+  "repository": "https://github.com/919980059/ng-material-tabs.git",
   "scripts": {
-    "login": "npm login --registry=https://repo.ttooc.xyz/repository/npm-private/",
     "unpublish-npm": "npm unpublish",
     "publish-npm": "npm publish",
-    "publish-nexus": "npm publish --registry=https://repo.ttooc.xyz/repository/npm-private/"
   },
   "keywords": [
     "Angular",

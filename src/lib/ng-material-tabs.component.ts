@@ -1,4 +1,4 @@
-import {Component, HostListener, Input, OnInit, Optional, Renderer2} from '@angular/core';
+import {Component, EventEmitter, HostListener, Input, OnInit, Optional, Output, Renderer2} from '@angular/core';
 import {ResolveEnd, Router, RouteReuseStrategy} from '@angular/router';
 import {TranslateService} from '@ngx-translate/core';
 import {filter, map} from 'rxjs/operators';
@@ -13,7 +13,8 @@ import {fuseAnimations} from './animations';
             <a class="route-tab secondary-text user-select-none" cdkOverlayOrigin #trigger="cdkOverlayOrigin"
                (contextmenu)="onContextMenu($event,tab,i)"
                [libAddClassToElement]="classes" mat-tab-link *ngFor="let tab of tabs;let i=index"
-               [active]="activeIndex === i" [ngClass]="{'tab-active':activeIndex===i}">
+               [active]="active.index === i" [ngClass]="{'tab-active':active.index===i}">
+                <!--right click menus panel-->
                 <ng-template
                         cdkConnectedOverlay [cdkConnectedOverlayHasBackdrop]="true"
                         [cdkConnectedOverlayOffsetX]="position.x"
@@ -25,24 +26,25 @@ import {fuseAnimations} from './animations';
                     <ul class="menu-list" [@animate]="{value:'*',params:{scale:0.1,duration:'200ms',delay:'0ms'}}">
                         <li *ngFor="let menu of menus" matRipple (click)="menuClose(menu.id,tab,i)"
                             class="dark-box-shadow-hover cursor-pointer" fxLayout="row" fxLayoutAlign="start center">
-                            {{menu.title}}
+                            {{menu.title|translate}}
                         </li>
                     </ul>
                 </ng-template>
                 <div fxLayout="row" fxLayoutAlign="space-around center" [routerLink]="tab.url"
-                     [ngClass]="{'theme-color':activeIndex===i}"
-                     (click)="activeIndex = i">
+                     [ngClass]="{'theme-color':active.index===i}"
+                     (click)="active.index = i">
                     <span>{{tab.translate ? (tab.translate|translate) : tab.title}}</span>
                 </div>
                 <!--空白处也可点击切换-->
+                <!--click empty part in tab-->
                 <div fxLayout="column" fxLayoutAlign="start start">
                     <div fxFlex="1 1 auto" [routerLink]="tab.url"
-                         (click)="activeIndex = i"></div>
+                         (click)="active.index = i"></div>
                     <mat-icon (click)="closeTab(i)" [ngStyle]="{'visibility':tab.canDelete?'':'hidden'}"
                               class="mat-icon-20 warn-color">close
                     </mat-icon>
                     <div fxFlex="1 1 auto" [routerLink]="tab.url"
-                         (click)="activeIndex = i"></div>
+                         (click)="active.index = i"></div>
                 </div>
             </a>
         </nav>
@@ -54,17 +56,40 @@ export class NgMaterialTabsComponent implements OnInit {
 
     @Input()
     classes: string | string[];
+    @Input()
+    menuTitles: any[] = [];
 
-    tabs: Tab[] = []; // 标签
-    activeIndex: number; // 激活标签
+    tabs: Tab[] = []; // 标签  // tabs
+    @Input()
+    active: any = {index: 0}; // 激活标签 // activeIndex
     customReuseStrategy: CustomReuseStrategy;
-    currentState: number; // 当前页面history的状态
+    currentState: number; // 当前页面history的状态   // historyState in current route
 
-    sourceMenus = []; // 右键菜单
-    menus = []; // 展示菜单
-    position = {x: 0, y: 0};
+    sourceMenus = []; // 右键菜单  // right click menus
+    menus = []; // 展示菜单  // show menus filtered by sourceMenus
+    position = {x: 0, y: 0}; // position of right click menus panel
 
-    tabPagination = false; // 展示控制条
+    tabPagination = false; // 展示控制条  // control scroll bar of tabs
+
+    // emit Events when tabs change   {action:'initial'|'openNew'|'openExist'|'close'|'closeLeft'|'closeRight'|'closeOthers',tabs:this.tabs}
+    @Output()
+    tabsChange: EventEmitter<any> = new EventEmitter<any>();
+    // Detailed events
+    @Output()
+    tabInitial: EventEmitter<any> = new EventEmitter<any>();
+    @Output()
+    openNew: EventEmitter<any> = new EventEmitter<any>();
+    @Output()
+    openExist: EventEmitter<any> = new EventEmitter<any>();
+    @Output()
+    close: EventEmitter<any> = new EventEmitter<any>();
+    @Output()
+    closeLeft: EventEmitter<any> = new EventEmitter<any>();
+    @Output()
+    closeRight: EventEmitter<any> = new EventEmitter<any>();
+    @Output()
+    closeOthers: EventEmitter<any> = new EventEmitter<any>();
+
 
     constructor(private router: Router,
                 @Optional() private translate: TranslateService,
@@ -75,7 +100,7 @@ export class NgMaterialTabsComponent implements OnInit {
             this.fixPaginationStatus();
         }
         if (sessionStorage.getItem('activeIndex')) {
-            this.activeIndex = JSON.parse(sessionStorage.getItem('activeIndex'));
+            this.active.index = JSON.parse(sessionStorage.getItem('activeIndex'));
         }
         this.onRouterEvents();
         this.customReuseStrategy = routeReuseStrategy as CustomReuseStrategy;
@@ -86,6 +111,8 @@ export class NgMaterialTabsComponent implements OnInit {
 
     /**
      * 语言切换时需要去除其他路由复用
+     * Other route reuse needs to be removed during language switching
+     *
      */
     onLanguageChange() {
         if (this.translate) {
@@ -97,14 +124,15 @@ export class NgMaterialTabsComponent implements OnInit {
         }
     }
 
-    // 回退事件
+    // 回退事件   on goBack
     @HostListener('window:popstate', ['$event'])
     onHistory(event) {
         if (event.state && event.state.navigationId === this.currentState) {
-            this.closeTab(this.activeIndex);
+            this.closeTab(this.active.index);
         }
     }
 
+    // on wheel
     @HostListener('wheel', ['$event'])
     onWheel(event) {
         const pagerBefore = document.getElementsByClassName('mat-tab-header-pagination-before').item(0) as HTMLElement;
@@ -121,6 +149,7 @@ export class NgMaterialTabsComponent implements OnInit {
 
     /**
      * 修复标签控制条
+     * fix tabs scroll when there are few tags.
      */
     fixPaginationStatus() {
         setTimeout(() => {
@@ -136,6 +165,7 @@ export class NgMaterialTabsComponent implements OnInit {
 
     /**
      * 右键菜单
+     * right click menu
      * @param event
      * @param tab
      * @param i
@@ -172,18 +202,29 @@ export class NgMaterialTabsComponent implements OnInit {
 
     /**
      * 获取原始菜单
+     * init source menus
      */
     getSourceMenus() {
-        this.sourceMenus = [
-            {id: 'current', title: '关闭'},
-            {id: 'left', title: '关闭左侧标签'},
-            {id: 'right', title: '关闭右侧标签'},
-            {id: 'other', title: '关闭其他标签'}
-        ];
+        if (this.menuTitles.length === 4) {
+            this.sourceMenus = [
+                {id: 'current', title: this.menuTitles[0]},
+                {id: 'left', title: this.menuTitles[1]},
+                {id: 'right', title: this.menuTitles[2]},
+                {id: 'other', title: this.menuTitles[3]}
+            ];
+        } else {
+            this.sourceMenus = [
+                {id: 'current', title: 'Close'},
+                {id: 'left', title: 'CloseLeft'},
+                {id: 'right', title: 'CloseRight'},
+                {id: 'other', title: 'CloseOthers'}
+            ];
+        }
     }
 
     /**
      * 右键菜单关闭标签
+     * close tabs with 4 ways
      * @param id
      * @param t
      * @param i
@@ -206,13 +247,15 @@ export class NgMaterialTabsComponent implements OnInit {
                     }
                     return i <= index;
                 });
+                this.tabsChange.emit({action: 'closeLeft', tabs: this.tabs, active: this.active.index});
+                this.closeLeft.emit({tabs: this.tabs, active: this.active.index});
                 const currLength = this.tabs.length;
                 this.canDelete();
-                if (this.activeIndex < i) {
-                    this.activeIndex = 0;
-                    this.router.navigate([this.tabs[this.activeIndex].url]);
+                if (this.active.index < i) {
+                    this.active.index = 0;
+                    this.router.navigate([this.tabs[this.active.index].url]);
                 } else {
-                    this.activeIndex = this.activeIndex - (preLength - currLength);
+                    this.active.index = this.active.index - (preLength - currLength);
                 }
                 break;
             }
@@ -226,10 +269,12 @@ export class NgMaterialTabsComponent implements OnInit {
                     }
                     return index <= i;
                 });
+                this.tabsChange.emit({action: 'closeRight', tabs: this.tabs, active: this.active.index});
+                this.closeRight.emit({tabs: this.tabs, active: this.active.index});
                 this.canDelete();
-                if (this.activeIndex > i) {
-                    this.activeIndex = this.tabs.length - 1;
-                    this.router.navigate([this.tabs[this.activeIndex].url]);
+                if (this.active.index > i) {
+                    this.active.index = this.tabs.length - 1;
+                    this.router.navigate([this.tabs[this.active.index].url]);
 
                 }
                 break;
@@ -244,12 +289,14 @@ export class NgMaterialTabsComponent implements OnInit {
                     }
                     return i === index;
                 });
+                this.tabsChange.emit({action: 'closeOthers', tabs: this.tabs, active: this.active.index});
+                this.closeOthers.emit({tabs: this.tabs, active: this.active.index});
                 this.canDelete();
-                if (this.activeIndex !== i) {
-                    this.activeIndex = 0;
-                    this.router.navigate([this.tabs[this.activeIndex].url]);
+                if (this.active.index !== i) {
+                    this.active.index = 0;
+                    this.router.navigate([this.tabs[this.active.index].url]);
                 } else {
-                    this.activeIndex = 0;
+                    this.active.index = 0;
                 }
                 break;
             }
@@ -260,6 +307,8 @@ export class NgMaterialTabsComponent implements OnInit {
 
     /**
      * 背板点击关闭菜单
+     * close right menu panel when click backdrop
+     *
      * @param tab
      */
     onBackdropClick(tab) {
@@ -268,9 +317,11 @@ export class NgMaterialTabsComponent implements OnInit {
 
     /**
      * 监听路由事件来进行选项卡处理
+     * Listen for routing events and handle tabs
      */
     onRouterEvents() {
         // 路由解析完成
+        // on resolveEnd
         this.router.events.pipe(filter<ResolveEnd>(event => {
             return event instanceof ResolveEnd;
         }), map(event => {
@@ -281,7 +332,7 @@ export class NgMaterialTabsComponent implements OnInit {
             const data = activatedRoute.value.data;
             return {
                 id: event.id,
-                url: event.state.url.split('?')[0], // 保留restful url
+                url: event.state.url.split('?')[0], // 保留 非?传参url  // remove the content after ?
                 title: data.title ? data.title : '',
                 translate: data.translate ? data.translate : ''
             };
@@ -290,12 +341,16 @@ export class NgMaterialTabsComponent implements OnInit {
                 this.currentState = history.state.navigationId;
             }
             // 登录界面为登出或初始化
+            // login page are not included in tabs
             if (event.url.toLowerCase().includes('login')) {
                 this.tabs = [];
-                this.activeIndex = 0;
+                this.tabsChange.emit({action: 'initial', tabs: this.tabs, active: this.active.index});
+                this.tabInitial.emit({tabs: this.tabs, active: this.active.index});
+                this.active.index = 0;
                 return;
             }
             //    打开新的标签
+            // open new tab not exist
             if (!this.tabs.find(tab => tab.url === event.url)) {
                 const tab = new Tab();
                 tab.id = event.id;
@@ -303,16 +358,21 @@ export class NgMaterialTabsComponent implements OnInit {
                 tab.translate = event.translate;
                 tab.url = event.url;
                 const activeIndex = this.tabs.push(tab) - 1;
+                this.tabsChange.emit({action: 'openNew', tabs: this.tabs, active: this.active.index});
+                this.openNew.emit({tabs: this.tabs, active: this.active.index});
                 // 多个退出再进来会存在出现控制条的bug
+                // There will be a control bar bug when multiple exits come in again
                 setTimeout(() => {
-                    this.activeIndex = activeIndex;
+                    this.active.index = activeIndex;
                 });
                 this.fixPaginationStatus();
                 // if (this.tabs.length === 1) {
                 //     this.renderer2.removeClass(document.getElementById('routeTabs'), 'mat-tab-header-pagination-controls-enabled');
                 // }
-            } else { // 打开已有标签
-                this.activeIndex = this.tabs.findIndex(tab => tab.url === event.url);
+            } else { // 打开已有标签  // open tab exist
+                this.active.index = this.tabs.findIndex(tab => tab.url === event.url);
+                this.tabsChange.emit({action: 'openExist', tabs: this.tabs, active: this.active.index});
+                this.openExist.emit({tabs: this.tabs, active: this.active.index});
             }
             this.canDelete();
         });
@@ -320,40 +380,45 @@ export class NgMaterialTabsComponent implements OnInit {
 
     /**
      * 关闭标签
+     * Logic to handle closing tags
      * @param index
      */
     closeTab(index) {
         // 删除的在选中之后
+        // tabs need to delete are after active tab
         const deleteKey = this.tabs[index].url;
-        if (index > this.activeIndex) {
+        if (index > this.active.index) {
             this.tabs = this.tabs.filter((item, i) => i !== index);
             if (this.customReuseStrategy) {
                 this.customReuseStrategy.routeHandles.delete(deleteKey);
             }
             this.canDelete();
-            // 之前
-        } else if (index < this.activeIndex) {
+            // 之前  // before
+        } else if (index < this.active.index) {
             this.tabs = this.tabs.filter((item, i) => i !== index);
-            this.activeIndex = this.activeIndex - 1;
+            this.active.index = this.active.index - 1;
             if (this.customReuseStrategy) {
                 this.customReuseStrategy.routeHandles.delete(deleteKey);
             }
             this.canDelete();
-            // 删除的就是选中
+            // 删除的就是选中  // or just active tab
         } else {
             this.tabs = this.tabs.filter((item, i) => i !== index);
-            this.activeIndex = index - 1 > 0 ? index - 1 : this.tabs.length - 1;
-            this.router.navigate([this.tabs[this.activeIndex].url]).then(() => {
+            this.active.index = index - 1 > 0 ? index - 1 : this.tabs.length - 1;
+            this.router.navigate([this.tabs[this.active.index].url]).then(() => {
                 this.canDelete();
                 if (this.customReuseStrategy) {
                     this.customReuseStrategy.routeHandles.delete(deleteKey);
                 }
             });
         }
+        this.tabsChange.emit({action: 'close', tabs: this.tabs, active: this.active.index});
+        this.close.emit({tabs: this.tabs, active: this.active.index});
     }
 
     /**
      * 判断是否可以删除 剩余一个不让关闭标签
+     * Judge whether it can be deleted  The remaining one is not allowed to close the label
      */
     canDelete() {
         if (this.tabs.length === 1) {
@@ -364,7 +429,7 @@ export class NgMaterialTabsComponent implements OnInit {
             });
         }
         sessionStorage.setItem('routeTabs', JSON.stringify(this.tabs));
-        sessionStorage.setItem('activeIndex', JSON.stringify(this.activeIndex));
+        sessionStorage.setItem('activeIndex', JSON.stringify(this.active.index));
     }
 
     ngOnInit() {
@@ -373,12 +438,12 @@ export class NgMaterialTabsComponent implements OnInit {
 }
 
 export class Tab {
-    id?: any;
-    title: string;
-    openMenu = false;
-    translate?: string;
-    url: string;
-    canDelete = true;
+    id?: any;   // id
+    title: string;  // title
+    openMenu = false;  // menu open status
+    translate?: string;  // translate key for i18n in @ngx-translate
+    url: string;  // route path
+    canDelete = true;  // The remaining one is not allowed to close the label
 
     constructor() {
     }
