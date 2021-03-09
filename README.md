@@ -81,7 +81,7 @@ NgMaterialTabsModule.forChild(['/login', '/apps/bpmn'])
 
 ##### [classes] is the classes for the tab element.
 
-##### (tabsChange) is events when tabs change, it will emit {action:'restore'|'initial'|'openNew'|'openExist'|'close'|'closeLeft'|'closeRight'|'closeOthers',tabs:this.tabs,active:this.active.index}\
+##### (tabsChange) is events when tabs change, it will emit {action:'initial'|'openNew'|'openExist'|'close'|'closeLeft'|'closeRight'|'closeOthers',tabs:this.tabs,active:this.active.index}\
 
 ##### you can do something according to the action types and get tabs currently.
 
