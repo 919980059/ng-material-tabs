@@ -6,7 +6,7 @@
   "repository": "https://github.com/919980059/ng-material-tabs.git",
   "scripts": {
     "unpublish-npm": "npm unpublish",
-    "publish-npm": "npm publish",
+    "publish-npm": "npm publish"
   },
   "keywords": [
     "Angular",
