@@ -75,18 +75,18 @@ NgMaterialTabsModule.forChild(['/login', '/apps/bpmn'])
                 active:any={index:0};
 ```
 
-##### [active] is the active tab index of tabs ,it must be an object with property "index",and then you can use active whenever you want,and it will be the right index of tabs while tabs change.
+#### [active] is the active tab index of tabs ,it must be an object with property "index",and then you can use active whenever you want,and it will be the right index of tabs while tabs change.
 
-##### [menuTitles] is the titles for the right mouse button menu or translateKey in @ngx-translate.Default Values is like example above
+#### [menuTitles] is the titles for the right mouse button menu or translateKey in @ngx-translate.Default Values is like example above
 
-##### [classes] is the classes for the tab element.
+#### [classes] is the classes for the tab element.
 
-##### (tabsChange) is events when tabs change, it will emit {action:'initial'|'openNew'|'openExist'|'close'|'closeLeft'|'closeRight'|'closeOthers',tabs:this.tabs,active:this.active.index}\
+#### (tabsChange) is events when tabs change, it will emit {action:'initial'|'openNew'|'openExist'|'close'|'closeLeft'|'closeRight'|'closeOthers',tabs:this.tabs,active:this.active.index}\
 
-##### you can do something according to the action types and get tabs currently.
+#### you can do something according to the action types and get tabs currently.
 
-##### (tabInitial),(openNew),(openExist),(close),(closeLeft),(closeRight),(closeOthers) are detailed Events in tabsChange.
-##### Every Detailed Event will return {tabs:this.tabs,active:this.active.index}.
+#### (tabInitial),(openNew),(openExist),(close),(closeLeft),(closeRight),(closeOthers) are detailed Events in tabsChange.
+#### Every Detailed Event will return {tabs:this.tabs,active:this.active.index}.
 
 #### Import the CustomReuseStrategy to the AppModule. If not provide, it will not reuse routes with tabs , every route will be new.
 
